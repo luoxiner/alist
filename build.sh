@@ -42,7 +42,6 @@ FetchWebRelease() {
 }
 
 BuildDev() {
-  rm -rf .git/
   xgo -targets=linux/amd64,windows/amd64,darwin/amd64 -out "$appName" -ldflags="$ldflags" -tags=jsoniter .
   mkdir -p "dist"
   mv alist-* dist
@@ -58,7 +57,6 @@ BuildDocker() {
 }
 
 BuildRelease() {
-  rm -rf .git/
   mkdir -p "build"
   muslflags="--extldflags '-static -fpic' $ldflags"
   BASE="https://musl.nn.ci/"
