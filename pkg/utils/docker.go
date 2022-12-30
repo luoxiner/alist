@@ -2,6 +2,8 @@ package utils
 
 import (
 	"context"
+	"io/ioutil"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -26,7 +28,8 @@ type Docker struct {
 var docker *Docker
 
 func (docker *Docker) CreateContainer(req *CreateContainerReq) (string, error) {
-	mounts := make([]mount.Mount, 10)
+
+	mounts := make([]mount.Mount, 0)
 	for src, dst := range req.Mounts {
 		mounts = append(mounts, mount.Mount{
 			Source: src,
@@ -42,23 +45,25 @@ func (docker *Docker) CreateContainer(req *CreateContainerReq) (string, error) {
 		exposed_ports[p] = struct{}{}
 		binds[p] = []nat.PortBinding{
 			{
-				HostIP: "0.0.0.0",
+				HostIP:   "0.0.0.0",
 				HostPort: dst,
 			},
 		}
 	}
 
 	body, err := docker.cli.ContainerCreate(docker.ctx, &container.Config{
-		Hostname: req.Name,
-		Env:      req.Env,
-		Cmd:      req.Cmd,
+		Image:        req.Image,
+		Hostname:     req.Name,
+		Env:          req.Env,
+		Cmd:          req.Cmd,
+		Tty:          false,
 		ExposedPorts: exposed_ports,
 	}, &container.HostConfig{
-		Mounts: mounts,
+		Mounts:       mounts,
 		PortBindings: binds,
 	}, nil, nil, req.Name)
 
-	if (err != nil) {
+	if err != nil {
 		return "", err
 	}
 
@@ -74,11 +79,39 @@ func (docker *Docker) StopContainer(id string) error {
 }
 
 func (docker *Docker) RestartContainer(id string) error {
-	return docker.cli.ContainerRestart(docker.ctx, id , nil)
+	return docker.cli.ContainerRestart(docker.ctx, id, nil)
 }
 
 func (docker *Docker) RemoveContainer(id string) error {
 	return docker.cli.ContainerRemove(docker.ctx, id, types.ContainerRemoveOptions{})
+}
+
+func(docker *Docker) LogContainer(id string) (string, error) {
+	 read, err := docker.cli.ContainerLogs(docker.ctx, id, types.ContainerLogsOptions{ShowStderr: false,ShowStdout: true})
+	 if err != nil {
+		return "", err
+	 }
+	 log, err := ioutil.ReadAll(read)
+	 if err != nil {
+		return "", err
+	 }
+	 return string(log), nil
+}
+
+func(docker *Docker) WaitContainer(id string) error {
+	wait, errCh := docker.cli.ContainerWait(docker.ctx, id, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return err
+		}
+	case <-wait:
+	}
+	return nil
+}
+
+func(docker *Docker) ListContainers() ([]types.Container, error) {
+	return docker.cli.ContainerList(docker.ctx, types.ContainerListOptions{All: true})
 }
 
 func GetDefaultDocker() (*Docker, error) {
@@ -93,3 +126,5 @@ func GetDefaultDocker() (*Docker, error) {
 	docker = &Docker{cli: client, ctx: context.Background()}
 	return docker, nil
 }
+
+

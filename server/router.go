@@ -117,12 +117,6 @@ func admin(g *gin.RouterGroup) {
 	index.POST("/clear", middlewares.SearchIndex, handles.ClearIndex)
 	index.GET("/progress", middlewares.SearchIndex, handles.GetProgress)
 
-	
-	system := g.Group("/system")
-
-
-	v2ray := g.Group("/v2ray")
-
 }
 
 func _fs(g *gin.RouterGroup) {

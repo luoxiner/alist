@@ -45,22 +45,26 @@ type Config struct {
 	Database       Database  `json:"database"`
 	Scheme         Scheme    `json:"scheme"`
 	TempDir        string    `json:"temp_dir" env:"TEMP_DIR"`
+	V2rayConfigDir string    `json:"v2ray_config_dir" env:"V2RAY_CONF_DIR"`
 	BleveDir       string    `json:"bleve_dir" env:"BLEVE_DIR"`
 	Log            LogConfig `json:"log"`
 	MaxConnections int       `json:"max_connections" env:"MAX_CONNECTIONS"`
 }
 
 func DefaultConfig() *Config {
-	tempDir := filepath.Join(flags.DataDir, "temp")
-	indexDir := filepath.Join(flags.DataDir, "bleve")
-	logPath := filepath.Join(flags.DataDir, "log/log.log")
-	dbPath := filepath.Join(flags.DataDir, "data.db")
+	alist_prefix := filepath.Join(flags.DataDir, "alist")
+	tempDir := filepath.Join(alist_prefix, "temp")
+	indexDir := filepath.Join(alist_prefix, "bleve")
+	logPath := filepath.Join(alist_prefix, "log/log.log")
+	dbPath := filepath.Join(alist_prefix, "data.db")
+	v2rayConfDir := filepath.Join(alist_prefix, "v2ray")
 	return &Config{
 		Address:        "0.0.0.0",
 		Port:           5244,
 		JwtSecret:      random.String(16),
 		TokenExpiresIn: 48,
 		TempDir:        tempDir,
+		V2rayConfigDir: v2rayConfDir,
 		Database: Database{
 			Type:        "sqlite3",
 			Port:        0,
